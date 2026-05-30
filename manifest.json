@@ -8,11 +8,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://i.ibb.co/bj2F39KR/file-00000000a48c720886bced01940d3b84.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
-
