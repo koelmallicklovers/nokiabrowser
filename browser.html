@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nokia Browser</title>
+<meta name="application-name" content="Nokia Browser">
+<meta name="apple-mobile-web-app-title" content="Nokia Browser">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#111111">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  body {
+    background-color: #e0e0e0;
+    width: 100vw;
+    height: 100dvh; 
+    overflow: hidden;
+    position: fixed; 
+  }
+
+  /* Splash Screen */
+  #splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    background-color: #000;
+    background-image: url('https://i.ibb.co/4wSfDRZG/Picsart-26-05-30-23-06-37-520.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 9999; 
+    transition: opacity 0.5s ease-out; 
+  }
+
+  /* Full Screen Mobile Frame */
+  .mobile-frame {
+    width: 100%; 
+    height: 100%;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Top Bar */
+  .top-bar {
+    background-color: #111;
+    padding: 10px 12px;
+    border-bottom: 3px solid #4CAF50; 
+    flex-shrink: 0;
+  }
+
+  .search-box {
+    background-color: #333;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #222;
+  }
+
+  .search-box input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 100%;
+    outline: none;
+    font-size: 16px;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .search-box input::placeholder { color: #888; }
+  .search-box i { color: #999; font-size: 16px; cursor: pointer; }
+
+  /* Main Content Area */
+  .content-container {
+    flex: 1;
+    position: relative;
+    background-color: #fff;
+    overflow: hidden;
+  }
+
+  /* Menu List View */
+  .menu-list {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px; 
+    cursor: pointer;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    transition: all 0.2s;
+  }
+
+  .menu-item .icon { margin-right: 15px; font-size: 22px; }
+  .menu-item .arrow { margin-left: auto; font-size: 18px; color: #fff; }
+
+  /* Nokia Colors */
+  .bg-white { background-color: #f9f9f9; color: #333; border-bottom: 1px solid #ddd; }
+  .google-icon { color: #4285F4; }
+  .fb-icon { color: #3b5998; }
+  .yt-icon { color: #cc181e; }
+  .bg-social { background: linear-gradient(to bottom, #74badd, #56a5d0); color: white; }
+  .bg-entertainment { background: linear-gradient(to bottom, #5d75ae, #4863a3); color: white; }
+  .bg-information { background: linear-gradient(to bottom, #d6247c, #c01869); color: white; }
+  .bg-shopping { background: linear-gradient(to bottom, #f7ce3a, #ecc125); color: white; }
+
+  /* NEW: GRID MODE STYLE (Button 4) */
+  .menu-list.grid-mode {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 15px;
+    background: #f0f0f0;
+  }
+  .menu-list.grid-mode .menu-item {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    border-radius: 10px;
+    height: 110px;
+    font-size: 15px;
+    padding: 15px 5px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: none;
+  }
+  .menu-list.grid-mode .menu-item .icon { margin-right: 0; margin-bottom: 10px; font-size: 28px; }
+  .menu-list.grid-mode .menu-item .arrow { display: none; }
+
+  /* Webview Iframe */
+  #webview {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: none;
+  }
+
+  /* MODALS / OVERLAYS (For Button 1 & 3) */
+  .overlay-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.98);
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+  }
+  .overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #111;
+  }
+  .close-btn { cursor: pointer; color: #cc181e; font-size: 22px; }
+  
+  .bookmark-list, .menu-options {
+    list-style: none;
+    overflow-y: auto;
+  }
+  .bookmark-item, .option-item {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .add-bkmk-btn {
+    background: #4CAF50; color: white; border: none; padding: 10px;
+    border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 15px;
+  }
+
+  /* Bottom Navigation Bar */
+  .bottom-nav {
+    background: linear-gradient(to bottom, #4a4a4a, #111111);
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 30px; 
+    border-top: 1px solid #000;
+    z-index: 12;
+    flex-shrink: 0;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
+  }
+
+  .bottom-nav .nav-item i { color: #aaa; font-size: 22px; cursor: pointer; }
+  .bottom-nav .nav-item.active i { color: #4CAF50; }
+  ::-webkit-scrollbar { width: 0px; }
+</style>
+</head>
+<body>
+
+<div id="splash-screen"></div>
+
+<div class="mobile-frame">
+  <div class="top-bar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="URL or search term">
+      <i class="fas fa-search" onclick="doSearch()"></i>
+    </div>
+  </div>
+
+  <div class="content-container">
+    <iframe id="webview" src=""></iframe>
+
+    <div id="optionsPanel" class="overlay-panel">
+      <div class="overlay-header">
+        <span>Nokia Browser Options</span>
+        <i class="fas fa-times close-btn" onclick="toggleOverlay('optionsPanel')"></i>
+      </div>
+      <div class="menu-options">
+        <div class="option-item" onclick="alert('Nokia Browser v2.0\nCreated as PWA Webapp.')">About Browser</div>
+        <div class="option-item" onclick="location.reload()">Clear Cache & Reload</div>
+        <div class="option-item" onclick="toggleOverlay('optionsPanel'); goHome();">Go to Home</div>
+      </div>
+    </div>
+
+    <div id="bookmarkPanel" class="overlay-panel">
+      <div class="overlay-header">
+        <span>Bookmarks / Favorites</span>
+        <i class="fas fa-times close-btn" onclick="toggleOverlay('bookmarkPanel')"></i>
+      </div>
+      <button class="add-bkmk-btn" onclick="addCurrentPageToBookmark()">+ Add Current Page</button>
+      <div id="bookmarksContainer" class="bookmark-list"></div>
+    </div>
+
+    <div class="menu-list" id="homeMenu">
+      <div class="menu-item bg-white" onclick="loadUrl('https://www.google.com/webhp?igu=1')">
+        <i class="fab fa-google icon google-icon"></i> <span>Google.com</span>
+      </div>
+      <div class="menu-item bg-white" onclick="loadUrl('https://m.facebook.com')">
+        <i class="fab fa-facebook-square icon fb-icon"></i> <span>Facebook</span>
+      </div>
+      <div class="menu-item bg-white" onclick="loadUrl('https://m.youtube.com')">
+        <i class="fab fa-youtube icon yt-icon"></i> <span>YouTube</span>
+      </div>
+      <div class="menu-item bg-social" onclick="loadUrl('https://m.wikipedia.org')">
+        <i class="fas fa-globe icon"></i> <span>Wikipedia</span>
+        <i class="fas fa-caret-right arrow"></i>
+      </div>
+      <div class="menu-item bg-entertainment" onclick="loadUrl('https://www.google.com/search?igu=1&q=entertainment')">
+        <i class="fas fa-gamepad icon"></i> <span>Entertainment</span>
+        <i class="fas fa-caret-right arrow"></i>
+      </div>
+      <div class="menu-item bg-information" onclick="loadUrl('https://www.google.com/search?igu=1&q=news')">
+        <i class="fas fa-newspaper icon"></i> <span>Information</span>
+        <i class="fas fa-caret-right arrow"></i>
+      </div>
+      <div class="menu-item bg-shopping" onclick="loadUrl('https://www.google.com/search?igu=1&q=shopping')">
+        <i class="fas fa-shopping-cart icon"></i> <span>Shopping</span>
+        <i class="fas fa-caret-right arrow"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item" id="btn-menu" onclick="toggleOverlay('optionsPanel')"><i class="fas fa-bars"></i></div>
+    <div class="nav-item active" id="btn-home" onclick="goHome()"><i class="fas fa-globe"></i></div>
+    <div class="nav-item" id="btn-star" onclick="openBookmarks()"><i class="fas fa-star"></i></div>
+    <div class="nav-item" id="btn-grid" onclick="toggleGridView()"><i class="fas fa-th-large"></i></div>
+  </div>
+</div>
+
+<script>
+  // Splash Screen Logic
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const splash = document.getElementById('splash-screen');
+      splash.style.opacity = '0'; 
+      setTimeout(function() { splash.style.display = 'none'; }, 500); 
+    }, 7000); 
+  });
+
+  // PWA Service Worker Registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker Registered!', reg))
+        .catch(err => console.log('Service Worker Error', err));
+    });
+  }
+
+  const webview = document.getElementById('webview');
+  const homeMenu = document.getElementById('homeMenu');
+  const searchInput = document.getElementById('searchInput');
+
+  function loadUrl(url) {
+    webview.src = url;
+    homeMenu.style.display = 'none'; 
+    webview.style.display = 'block'; 
+    searchInput.value = url.includes('igu=1') ? 'https://www.google.com' : url; 
+    setActiveButton('btn-home');
+  }
+
+  function goHome() {
+    webview.style.display = 'none';
+    homeMenu.style.display = 'flex';
+    webview.src = "";
+    searchInput.value = "";
+    closeAllOverlays();
+    setActiveButton('btn-home');
+  }
+
+  function doSearch() {
+    let query = searchInput.value.trim();
+    if (query) {
+      let finalUrl = "";
+      if (query.toLowerCase() === 'google' || query.toLowerCase() === 'google.com') {
+         finalUrl = 'https://www.google.com/webhp?igu=1';
+      } else if (query.includes('.') && !query.includes(' ')) {
+         finalUrl = query.startsWith('http') ? query : 'https://' + query;
+      } else {
+         finalUrl = 'https://www.google.com/search?igu=1&q=' + encodeURIComponent(query);
+      }
+      loadUrl(finalUrl);
+    }
+  }
+
+  // BUTTON 4: Grid Toggle Function
+  function toggleGridView() {
+    homeMenu.classList.toggle('grid-mode');
+    closeAllOverlays();
+    setActiveButton('btn-grid');
+  }
+
+  // MODALS CONTROL (Button 1 & 3)
+  function toggleOverlay(id) {
+    let panel = document.getElementById(id);
+    let isVisible = panel.style.display === 'flex';
+    closeAllOverlays();
+    panel.style.display = isVisible ? 'none' : 'flex';
+    if(!isVisible) {
+      setActiveButton(id === 'optionsPanel' ? 'btn-menu' : 'btn-star');
+    } else {
+      setActiveButton('btn-home');
+    }
+  }
+
+  function closeAllOverlays() {
+    document.getElementById('optionsPanel').style.display = 'none';
+    document.getElementById('bookmarkPanel').style.display = 'none';
+  }
+
+  function setActiveButton(id) {
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // BUTTON 3: Bookmarks Logic via localStorage
+  function openBookmarks() {
+    toggleOverlay('bookmarkPanel');
+    displayBookmarks();
+  }
+
+  function addCurrentPageToBookmark() {
+    let currentUrl = webview.src;
+    if(!currentUrl || webview.style.display === 'none') {
+      alert("Pehle koi website open karein tabhi bookmark hoga!");
+      return;
+    }
+    let title = prompt("Bookmark ka naam daalein:", searchInput.value);
+    if(title) {
+      let bookmarks = JSON.parse(localStorage.getItem('nokia_bookmarks')) || [];
+      bookmarks.push({title: title, url: currentUrl});
+      localStorage.setItem('nokia_bookmarks', JSON.stringify(bookmarks));
+      displayBookmarks();
+    }
+  }
+
+  function displayBookmarks() {
+    let container = document.getElementById('bookmarksContainer');
+    container.innerHTML = "";
+    let bookmarks = JSON.parse(localStorage.getItem('nokia_bookmarks')) || [];
+    if(bookmarks.length === 0) {
+      container.innerHTML = "<p style='color:#666;text-align:center;'>Koi bookmark nahi hai.</p>";
+      return;
+    }
+    bookmarks.forEach((b, index) => {
+      let item = document.createElement('div');
+      item.className = 'bookmark-item';
+      item.innerHTML = `<span onclick="loadUrl('${b.url}'); closeAllOverlays();" style="flex:1;">⭐ ${b.title}</span> 
+                        <i class="fas fa-trash" onclick="deleteBookmark(${index})" style="color:red;cursor:pointer;"></i>`;
+      container.appendChild(item);
+    });
+  }
+
+  function deleteBookmark(index) {
+    let bookmarks = JSON.parse(localStorage.getItem('nokia_bookmarks')) || [];
+    bookmarks.splice(index, 1);
+    localStorage.setItem('nokia_bookmarks', JSON.stringify(bookmarks));
+    displayBookmarks();
+  }
+
+  searchInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') { doSearch(); searchInput.blur(); }
+  });
+</script>
+</body>
+</html>
+
