@@ -1,7 +1,8 @@
-const CACHE_NAME = 'nokia-browser-v2';
+const CACHE_NAME = 'nokia-browser-v3';
 const urlsToCache = [
   'browser.html',
-  'manifest.json'
+  'manifest.json',
+  'logo.png'
 ];
 
 // Install Service Worker
